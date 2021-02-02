@@ -29,6 +29,10 @@ parameters:
   type: string
   default: 'Microsoft.ML.OnnxRuntime'
 
+- name: BuildVariant
+  type: string
+  default: 'openmp'
+
 jobs:
 - job: Linux_C_API_Packaging_CPU_x64
   workspace:
@@ -492,7 +496,8 @@ jobs:
   - template: ../nuget/templates/upload-binary-sizes-from-nuget-package.yml
     parameters:
       downloadPath: $(Build.BinariesDirectory)/nuget-artifact/final-package
-      gitCommitHash: $(OnnxRuntimeGitCommitHashShort)  
+      gitCommitHash: $(OnnxRuntimeGitCommitHashShort)
+      buildVariant: ${{ parameters.BuildVariant }}
 
   - template: ../nuget/templates/get-nuget-package-version-as-variable.yml
     parameters:
