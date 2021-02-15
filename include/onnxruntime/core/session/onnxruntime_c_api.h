@@ -7,7 +7,7 @@
 #include <string.h>
 
 // This value is used in structures passed to ORT so that a newer version of ORT will still work with them
-#define ORT_API_VERSION 7
+#define ORT_API_VERSION 8
 
 #ifdef __cplusplus
 extern "C" {
@@ -196,6 +196,15 @@ typedef struct OrtAllocator {
   void(ORT_API_CALL* Free)(struct OrtAllocator* this_, void* p);
   const struct OrtMemoryInfo*(ORT_API_CALL* Info)(const struct OrtAllocator* this_);
 } OrtAllocator;
+
+typedef struct OrtAllocatorArena {
+  OrtAllocator *device_allocator;
+  void*(ORT_API_CALL* Alloc)(size_t size);
+  void(ORT_API_CALL* Free)(void* p);
+  void*(ORT_API_CALL* Reserve)(size_t size);
+  size_t(ORT_API_CALL* Used)();
+  size_t(ORT_API_CALL* Max)();
+} OrtAllocatorArena;
 
 typedef void(ORT_API_CALL* OrtLoggingFunction)(
     void* param, OrtLoggingLevel severity, const char* category, const char* logid, const char* code_location,
@@ -1174,6 +1183,51 @@ struct OrtApi {
    * Get the current device id of the GPU execution provider (cuda/tensorrt/rocm).
    */
   ORT_API2_STATUS(GetCurrentGpuDeviceId, _In_ int* device_id);
+
+  /**
+  * Use this API to obtain a new allocated OrtAllocator* object whose inner field are the given inputs.
+  * It is the user responsibility to release the returned OrtAllocator*.
+  * \param version - C_API version (available from 7)
+  * \param AllocFunc - A function pointer to the callback that will be called upon every memory allocation.
+  * \param FreeFunc - A function pointer to the callback that will be called upon memory free.
+  * \param InfoFunc - A function pointer to a callback that returns OrtMemoryInfo* with OrtAllocatorType set to OrtDeviceAllocator.
+  * \param out - A place holder for the custom OrtAllocator.
+    The caller is responsible for freeing it.
+  */
+  ORT_API2_STATUS(CreateCustomDeviceAllocator, uint32_t version, void* AllocFunc(OrtAllocator*, size_t), void FreeFunc(OrtAllocator*, void*),
+      const OrtMemoryInfo* InfoFunc(const OrtAllocator*), _Outptr_ OrtAllocator** out);
+
+  /**
+  * Use this API to obtain a new allocated OrtAllocatorArena* object whose inner field are the given inputs.
+  * It is the user responsibility to release the returned OrtAllocatorArena*.
+  * \param device_allocator - This is the underline device allocator that the arena allocator will use in. The Info inner field
+  * should return OrtMemoryInfo* with OrtAllocatorType set to OrtDeviceAllocator.
+  * \param AllocFunc - A function pointer to the callback that will be called upon calling Alloc from within arena context.
+  * \param FreeFunc - A function pointer to the callback that will be called upon calling Free from within arena context.
+  * \param ReserveFunc - A function pointer to the callback that will be called upon calling for reserving memory from within arena context.
+  * \param UsedFunc - A function pointer to the callback that will be called to get the total size of allocated memory from within arena context.
+  * \param FreeFunc - A function pointer to the callback that will be called to get the memory limit from within arena context.
+  * \param out - A place holder for the custom OrtAllocatorArena.
+    The caller is responsible for freeing it.
+  */
+  ORT_API2_STATUS(CreateCustomArenaAllocator, _In_ OrtAllocator* device_allocator, void* AllocFunc(size_t), void FreeFunc(void*), void* ReserveFunc(size_t),
+      size_t UsedFunc(void), size_t MaxFunc(void), _Outptr_ OrtAllocatorArena** out);
+
+/**
+  * Use this API to register a custom OrtAllocator* to the given env. Whenever a new session is created
+  * and associated with this env, if session_options is configured to use the env allocator instead of the default one,
+  * and not to use an arena allocator, then the memory management will be done by the given allocator.
+  * It is the user responsibility to release the OrtAllocator*.
+  */
+  ORT_API2_STATUS(RegisterCustomDeviceAllocator, _Inout_ OrtEnv* env, _In_ OrtAllocator *CustomAllocator);
+
+  /**
+  * Use this API to register a custom OrtAllocatorArena* to the given env. Whenever a new session is created
+  * and associated with this env, if session_options is configured to use the env allocator instead of the default one,
+  * the memory management (which is set to as arena by default) will be done by the given allocator.
+  * It is the user responsibility to release the OrtAllocatorArena*.
+  */
+  ORT_API2_STATUS(RegisterCustomArenaAllocator, _Inout_ OrtEnv* env, _In_ OrtAllocatorArena *CustomArenaAllocator);
 };
 
 /*

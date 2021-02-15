@@ -1122,6 +1122,28 @@ ORT_API_STATUS_IMPL(OrtApis::SessionGetOverridableInitializerName, _In_ const Or
   API_IMPL_END
 }
 
+
+ORT_API_STATUS_IMPL(OrtApis::CreateCustomDeviceAllocator,
+    uint32_t version, void* AllocFunc(OrtAllocator*, size_t), void FreeFunc(OrtAllocator*, void*),
+    const OrtMemoryInfo* InfoFunc(const OrtAllocator*), _Outptr_ OrtAllocator** out) {
+  API_IMPL_BEGIN
+  OrtAllocator *ortAllocator = new OrtAllocator{version, AllocFunc, FreeFunc, InfoFunc};
+  *out = ortAllocator;
+  return nullptr;
+  API_IMPL_END
+}
+
+ORT_API_STATUS_IMPL(OrtApis::CreateCustomArenaAllocator,
+    _In_ OrtAllocator* device_allocator, void* AllocFunc(size_t), void FreeFunc(void*), void* ReserveFunc(size_t),
+                    size_t UsedFunc(void), size_t MaxFunc(void), _Outptr_ OrtAllocatorArena** out) {
+  API_IMPL_BEGIN
+    OrtAllocatorArena *ortAllocatorArena = new OrtAllocatorArena {device_allocator, AllocFunc, FreeFunc, ReserveFunc,
+                                                               UsedFunc, MaxFunc};
+    *out = ortAllocatorArena;
+    return nullptr;
+  API_IMPL_END
+}
+
 ORT_API_STATUS_IMPL(OrtApis::AllocatorAlloc, _Inout_ OrtAllocator* ptr, size_t size, _Outptr_ void** out) {
   API_IMPL_BEGIN
   *out = ptr->Alloc(ptr, size);
@@ -1916,7 +1938,7 @@ Second example, if we wanted to add and remove some members, we'd do this:
 	In GetApi we now make it return ort_api_3 for version 3.
 */
 
-static constexpr OrtApi ort_api_1_to_7 = {
+static constexpr OrtApi ort_api_1_to_8 = {
     // NOTE: The ordering of these fields MUST not change after that version has shipped since existing binaries depend on this ordering.
 
     // Shipped as version 1 - DO NOT MODIFY (see above text for more information)
@@ -2109,6 +2131,12 @@ static constexpr OrtApi ort_api_1_to_7 = {
     &OrtApis::SetCurrentGpuDeviceId,
     &OrtApis::GetCurrentGpuDeviceId,
     // End of Version 7 - DO NOT MODIFY ABOVE (see above text for more information)
+
+    // Version 8 - In development, feel free to add/remove/rearrange here
+    &OrtApis::CreateCustomDeviceAllocator,
+    &OrtApis::CreateCustomArenaAllocator,
+    &OrtApis::RegisterCustomDeviceAllocator,
+    &OrtApis::RegisterCustomArenaAllocator,
 };
 
 // Assert to do a limited check to ensure Version 1 of OrtApi never changes (will detect an addition or deletion but not if they cancel out each other)
@@ -2117,7 +2145,7 @@ static_assert(offsetof(OrtApi, ReleaseCustomOpDomain) / sizeof(void*) == 101, "S
 
 ORT_API(const OrtApi*, OrtApis::GetApi, uint32_t version) {
   if (version >= 1 && version <= ORT_API_VERSION)
-    return &ort_api_1_to_7;
+    return &ort_api_1_to_8;
 
   fprintf(stderr, "The given version [%u] is not supported, only version 1 to %u is supported in this build.\n",
           version, ORT_API_VERSION);
