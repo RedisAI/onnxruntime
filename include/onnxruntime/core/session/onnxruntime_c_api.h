@@ -7,7 +7,7 @@
 #include <string.h>
 
 // This value is used in structures passed to ORT so that a newer version of ORT will still work with them
-#define ORT_API_VERSION 6
+#define ORT_API_VERSION 7
 
 #ifdef __cplusplus
 extern "C" {
@@ -196,6 +196,15 @@ typedef struct OrtAllocator {
   void(ORT_API_CALL* Free)(struct OrtAllocator* this_, void* p);
   const struct OrtMemoryInfo*(ORT_API_CALL* Info)(const struct OrtAllocator* this_);
 } OrtAllocator;
+
+typedef struct OrtAllocatorArena {
+  OrtAllocator *device_allocator;
+  void*(ORT_API_CALL* Alloc)(size_t size);
+  void(ORT_API_CALL* Free)(void* p);
+  void*(ORT_API_CALL* Reserve)(size_t size);
+  size_t(ORT_API_CALL* Used)();
+  size_t(ORT_API_CALL* Max)();
+} OrtAllocatorArena;
 
 typedef void(ORT_API_CALL* OrtLoggingFunction)(
     void* param, OrtLoggingLevel severity, const char* category, const char* logid, const char* code_location,
@@ -1134,6 +1143,28 @@ struct OrtApi {
                   int max_dead_bytes_per_chunk, _Outptr_ OrtArenaCfg** out);
 
   ORT_CLASS_RELEASE(ArenaCfg);
+
+  /**
+  * Use this API to obtain the description of the graph present in the model
+  * (doc_string field of the GraphProto message within the ModelProto message).
+  * If it doesn't exist, an empty string will be returned.
+  * \param model_metadata - an instance of OrtModelMetadata
+  * \param allocator - allocator used to allocate the string that will be returned back
+  * \param value - is set to a null terminated string allocated using 'allocator'.
+    The caller is responsible for freeing it.
+  */
+  ORT_API2_STATUS(ModelMetadataGetGraphDescription, _In_ const OrtModelMetadata* model_metadata,
+                  _Inout_ OrtAllocator* allocator, _Outptr_ char** value);
+
+  ORT_API2_STATUS(CreateCustomDeviceAllocator, uint32_t version, void* AllocFunc(OrtAllocator*, size_t), void FreeFunc(OrtAllocator*, void*),
+      const OrtMemoryInfo* InfoFunc(const OrtAllocator*), _Outptr_ OrtAllocator** out);
+
+  ORT_API2_STATUS(CreateCustomArenaAllocator, _In_ OrtAllocator* device_allocator, void* AllocFunc(size_t), void FreeFunc(void*), void* ReserveFunc(size_t),
+      size_t UsedFunc(void), size_t MaxFunc(void), _Outptr_ OrtAllocatorArena** out);
+
+  ORT_API2_STATUS(RegisterCustomDeviceAllocator, _Inout_ OrtEnv* env, _In_ OrtAllocator *CustomAllocator);
+
+  ORT_API2_STATUS(RegisterCustomArenaAllocator, _Inout_ OrtEnv* env, _In_ OrtAllocatorArena *CustomArenaAllocator);
 };
 
 /*
