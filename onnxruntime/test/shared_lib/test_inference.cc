@@ -1164,68 +1164,6 @@ TEST(CApiTest, TestSharingOfInitializer) {
                     nullptr);
 }
 
-#ifndef ORT_NO_RTTI
-TEST(CApiTest, TestIncorrectInputTypeToModel_Tensors) {
-  // simple inference test
-  // prepare inputs (incorrect type)
-  Ort::MemoryInfo mem_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
-
-  double data[] = {2., 1., 4., 3., 6., 5.};
-  const int data_len = sizeof(data) / sizeof(data[0]);
-  const int64_t shape[] = {3, 2};
-  const size_t shape_len = sizeof(shape) / sizeof(shape[0]);
-  Ort::Value val = Ort::Value::CreateTensor<double>(mem_info, data, data_len, shape, shape_len);
-
-  std::vector<const char*> input_names{"X"};
-  const char* output_names[] = {"Y"};
-  Ort::SessionOptions session_options;
-  Ort::Session session(*ort_env, MODEL_URI, session_options);
-  bool exception_thrown = false;
-  try {
-    auto outputs = session.Run(Ort::RunOptions{nullptr}, input_names.data(), &val, 1, output_names, 1);
-  } catch (const Ort::Exception& ex) {
-    exception_thrown = true;
-    const char* exception_string = ex.what();
-    ASSERT_TRUE(strcmp(exception_string,
-                       "Unexpected input data type. Actual: (tensor(double)) , expected: (tensor(float))") == 0);
-  }
-
-  ASSERT_TRUE(exception_thrown);
-}
-TEST(CApiTest, TestIncorrectInputTypeToModel_SequenceTensors) {
-  // simple inference test
-  // prepare inputs (incorrect type)
-  Ort::MemoryInfo mem_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
-
-  double data[] = {2., 1., 4., 3., 6., 5.};
-  const int data_len = sizeof(data) / sizeof(data[0]);
-  const int64_t shape[] = {2, 3};
-  const size_t shape_len = sizeof(shape) / sizeof(shape[0]);
-  Ort::Value val = Ort::Value::CreateTensor<double>(mem_info, data, data_len, shape, shape_len);
-
-  std::vector<Ort::Value> seq;
-  seq.push_back(std::move(val));
-
-  Ort::Value seq_value = Ort::Value::CreateSequence(seq);
-
-  std::vector<const char*> input_names{"X"};
-  const char* output_names[] = {"Y"};
-  Ort::SessionOptions session_options;
-  Ort::Session session(*ort_env, SEQUENCE_MODEL_URI, session_options);
-  bool exception_thrown = false;
-  try {
-    auto outputs = session.Run(Ort::RunOptions{nullptr}, input_names.data(), &seq_value, 1, output_names, 1);
-  } catch (const Ort::Exception& ex) {
-    exception_thrown = true;
-    const char* exception_string = ex.what();
-    ASSERT_TRUE(strcmp(exception_string,
-                       "Unexpected input data type. Actual: (seq(double)) , expected: (seq(float))") == 0);
-  }
-
-  ASSERT_TRUE(exception_thrown);
-}
-#endif
-
 std::atomic<size_t> memory_inuse{0};
 
 void* myAlloc(OrtAllocator *ptr, size_t size) {

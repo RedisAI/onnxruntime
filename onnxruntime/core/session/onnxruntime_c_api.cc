@@ -2093,14 +2093,12 @@ static constexpr OrtApi ort_api_1_to_6 = {
     &OrtApis::SetGlobalDenormalAsZero,
     &OrtApis::CreateArenaCfg,
     &OrtApis::ReleaseArenaCfg,
-    // End of Version 6 - DO NOT MODIFY ABOVE (see above text for more information)
-
-    // Version 7 - In development, feel free to add/remove/rearrange here
-    &OrtApis::ModelMetadataGetGraphDescription,
     &OrtApis::CreateCustomDeviceAllocator,
     &OrtApis::CreateCustomArenaAllocator,
     &OrtApis::RegisterCustomDeviceAllocator,
     &OrtApis::RegisterCustomArenaAllocator,
+    // End of Version 6 - DO NOT MODIFY ABOVE (see above text for more information)
+
 };
 
 // Assert to do a limited check to ensure Version 1 of OrtApi never changes (will detect an addition or deletion but not if they cancel out each other)
