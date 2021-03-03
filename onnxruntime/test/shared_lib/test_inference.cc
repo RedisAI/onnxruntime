@@ -1170,7 +1170,6 @@ void* myAlloc(OrtAllocator *ptr, size_t size) {
   ORT_UNUSED_PARAMETER(ptr);
   constexpr size_t extra_len = sizeof(size_t);
   memory_inuse.fetch_add(size += extra_len);
-  std::cout << "Device allocating " << size << std::endl;
   void* p = ::malloc(size);
   if (p == nullptr)
     return p;
@@ -1184,7 +1183,6 @@ void myFree(OrtAllocator *ptr, void* p) {
   if (!p) return;
   p = (char*)p - extra_len;
   size_t len = *(size_t*)p;
-  std::cout << "Device freeing " << len << std::endl;
   memory_inuse.fetch_sub(len);
   return ::free(p);
 }
