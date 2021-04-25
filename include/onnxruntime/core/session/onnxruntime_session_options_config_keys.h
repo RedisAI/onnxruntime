@@ -46,3 +46,7 @@ static const char* const kOrtSessionOptionsConfigSetDenormalAsZero = "session.se
 // "1": enable. ORT does fusion logic for QDQ format.
 // Its default value is "1"
 static const char* const kOrtSessionOptionsEnableQuantQDQ = "session.enable_quant_qdq";
+
+// Key for disabling the option to load tensors from external files in model definition.
+// If the config value is set to "1" then loading external data is disabled, otherwise it is enabled (default value)
+static const char* const kOrtSessionOptionsConfigDisableExternalData = "session.disable_external_data";
