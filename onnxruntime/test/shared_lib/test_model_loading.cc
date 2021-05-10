@@ -58,7 +58,7 @@ TEST(CApiTest, model_from_array) {
 #endif
 }
 
-
+#ifdef DISABLE_EXTERNAL_INITIALIZERS
 TEST(CApiTest, TestDisableExternalInitiliazers) {
 
   const char* model_path = "testdata/model_with_external_initializers.onnx";
@@ -66,19 +66,12 @@ TEST(CApiTest, TestDisableExternalInitiliazers) {
   Ort::SessionOptions so;
   try {
     Ort::Session session(*ort_env.get(), model_path, so);
-  } catch (const std::exception& ex) {
-    ASSERT_TRUE(false) << "Creation of session should not have thrown exception" << ex.what();
-  }
-
-  so.AddConfigEntry(kOrtSessionOptionsConfigDisableExternalData, "1");
-  try {
-    Ort::Session session(*ort_env.get(), model_path, so);
     ASSERT_TRUE(false) << "Creation of session should have thrown exception";
   } catch (const std::exception& ex) {
     ASSERT_THAT(ex.what(), testing::HasSubstr("Initializer tensors with external data is not allowed."));
   }
 }
-
+#endif
 #endif
 }  // namespace test
 }  // namespace onnxruntime
