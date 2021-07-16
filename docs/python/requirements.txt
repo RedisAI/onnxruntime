@@ -4,3 +4,4 @@ pyquickhelper
 tensorflow
 tensorflow-onnx
 
+tensorflow>=1.15.5 # not directly required, pinned by Snyk to avoid a vulnerability
