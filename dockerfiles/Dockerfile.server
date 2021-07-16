@@ -6,10 +6,10 @@
 # Ubuntu 16.04, CPU version, Python 3.
 #--------------------------------------------------------------------------
 
-FROM ubuntu:16.04 AS minimal
+FROM ubuntu:xenial-20210114 AS minimal
 MAINTAINER Harry Yang "huayang@microsoft.com"
 
-FROM ubuntu:16.04 AS build
+FROM ubuntu:xenial-20210114 AS build
 ARG PYTHON_VERSION=3.5
 ARG ONNXRUNTIME_REPO=https://github.com/Microsoft/onnxruntime
 ARG ONNXRUNTIME_SERVER_BRANCH=master
